@@ -99,7 +99,7 @@ Future problem: There are two long lines of operations to create the damage text
 
 **Quality:** ⚠️  
 Current implementation prioritises rapid feature delivery over maintainability/scalability.  
-Future problem: The conversion of damage numbers to text requires a specific if statement. for example `damage` = -999 denotes death i.e. "KO!" but an addition of critical hits or damage-over-time would denote a "!" or "-" or "+" to represent each different damage category. It would probably be necessary to instead denote a "damage type" as an input to the damage text function so as to leave it as a one-liner instead of converting e.g. -999 to "KO!" and then inputting. Otherwise there will probably end up being 5 relatively similar lines instead of a 1-liner damage function with damage type as an input.  
+Future problem: The conversion of damage numbers to text requires a specific if statement. for example `damage` = -999 denotes death i.e. "KO!" but an addition of critical hits or damage-over-time would denote a "!" or "-" or "+" to represent each different damage category. For the purposes of future scalability it would possibly be necessary to instead denote a "damage type" as an input to the damage text function so as to leave it as a one-liner instead of converting e.g. -999 to "KO!" and then inputting. Otherwise there will probably end up being 5 relatively similar lines instead of a 1-liner damage function with damage type as an input.  
 
 Author  
 Lewis Foggie  
