@@ -21,6 +21,7 @@ level = 1
 start_game = False
 pause_game = False
 start_intro = False
+show_settings = False
 scren_scroll = [0, 0]
 
 #define player movement variables
@@ -28,7 +29,7 @@ moving_left = False
 moving_right = False
 moving_up = False
 moving_down = False
-
+control_scheme="ARROWS"
 #define font
 font = pygame.font.Font("assets/fonts/AtariClassic.ttf", 20)
 
@@ -59,6 +60,9 @@ restart_img = scale_img(pygame.image.load("assets/images/buttons/button_restart.
 exit_img = scale_img(pygame.image.load("assets/images/buttons/button_exit.png").convert_alpha(), constants.BUTTON_SCALE)
 resume_img = scale_img(pygame.image.load("assets/images/buttons/button_resume.png").convert_alpha(), constants.BUTTON_SCALE)
 start_img = scale_img(pygame.image.load("assets/images/buttons/button_start.png").convert_alpha(), constants.BUTTON_SCALE)
+settings_img = scale_img(pygame.image.load("assets/images/buttons/button_settings.png").convert_alpha(), constants.BUTTON_SCALE * 0.8)
+wasd_img = scale_img(pygame.image.load("assets/images/buttons/button_wasd.png").convert_alpha(), constants.BUTTON_SCALE*0.5)
+arrows_img = scale_img(pygame.image.load("assets/images/buttons/button_arrows.png").convert_alpha(), constants.BUTTON_SCALE*0.5)
 
 #load heart images
 heart_empty = scale_img(pygame.image.load("assets/images/items/heart_empty.png").convert_alpha(), constants.ITEM_SCALE)
@@ -237,6 +241,9 @@ start_button = Button(constants.SCREEN_WIDTH // 2 - 145, constants.SCREEN_HEIGHT
 exit_button = Button(constants.SCREEN_WIDTH // 2 - 110, constants.SCREEN_HEIGHT //2 + 50, exit_img)
 restart_button = Button(constants.SCREEN_WIDTH // 2 - 175, constants.SCREEN_HEIGHT //2 -50, restart_img)
 resume_button = Button(constants.SCREEN_WIDTH // 2 - 175, constants.SCREEN_HEIGHT //2 -150, resume_img)
+settings_button = Button(constants.SCREEN_WIDTH // 2 - 180, constants.SCREEN_HEIGHT //2 -53, settings_img)
+wasd_button = Button(constants.SCREEN_WIDTH // 2 - 0, constants.SCREEN_HEIGHT //2 -0, wasd_img)
+arrows_button = Button(constants.SCREEN_WIDTH // 2 - 250, constants.SCREEN_HEIGHT //2 -0, arrows_img)
 
 #main game loop
 run = True
@@ -247,12 +254,56 @@ while run:
   if not start_game:
     # render main menu
     screen.fill(constants.MENU_BG)
-    if start_button.draw(screen):
-      start_game = True
-      start_intro = True
-    if exit_button.draw(screen):
-      run = False
+    if show_settings:
+        # Settings screen (blank for now)
+        draw_text("SETTINGS", font, constants.WHITE, constants.SCREEN_WIDTH // 2 - 80, 100)
+        # Press ESC to go back for now
+        draw_text("Press ESC to go back", font, constants.WHITE, constants.SCREEN_WIDTH // 2 - 200, 500)
+        draw_text("Select movement controls type:", font, constants.WHITE, constants.SCREEN_WIDTH // 2 - 300, 200)
+        # --- DRAW AND CHECK NEW IMAGE BUTTONS ---
+        if wasd_button.draw(screen):
+          control_scheme = "WASD"
+        if arrows_button.draw(screen):
+          control_scheme = "ARROWS"
+          
+        if control_scheme == "WASD":
+          x_pos = wasd_button.rect.x
+          y_pos = wasd_button.rect.y
+        elif control_scheme == "ARROWS":
+          x_pos = arrows_button.rect.x
+          y_pos = arrows_button.rect.y
+          
+        rect_width = 240  # width of the rectangle
+        rect_height = 80  # height of the rectangle
+        padding = 50       # optional border spacing
+
+        pygame.draw.rect(
+          screen,
+          (255, 0, 0),  # color
+        (
+            x_pos - padding/2.25,  # top-left x
+            y_pos - padding/4 , # top-left y
+            rect_width,             # total width
+            rect_height             # total height
+        ),
+      3  # border thickness
+    )
+
+        if event.type == pygame.KEYDOWN:
+          if event.key == pygame.K_ESCAPE:
+            # do something when Escape is pressed
+            show_settings = False
+    else:
+      if start_button.draw(screen):
+        start_game = True
+        start_intro = True
+      if settings_button.draw(screen):
+        show_settings = True
+      if exit_button.draw(screen):
+        run = False
   else:
+    
+    
 
     if pause_game == True:
       screen.fill(constants.MENU_BG)
@@ -296,7 +347,10 @@ while run:
           damage, damage_pos = arrow.update(screen_scroll, world.obstacle_tiles, enemy_list)
           if damage:
             hit_fx.play()
-            damage_text = DamageText(damage_pos.centerx, damage_pos.y, str(damage), constants.RED)
+            if damage == -999:
+              damage_text = DamageText(damage_pos.centerx, damage_pos.y, "KO!", constants.RED)
+            else:
+              damage_text = DamageText(damage_pos.centerx, damage_pos.y, str(damage), constants.RED)
             damage_text_group.add(damage_text)
         damage_text_group.update()
         fireball_group.update(screen_scroll, player)
@@ -375,33 +429,61 @@ while run:
               item_group.add(item)
         
 
-  #event handler
+# event handler
   for event in pygame.event.get():
     if event.type == pygame.QUIT:
-      run = False
-    #take keyboard presses
-    if event.type == pygame.KEYDOWN:
-      if event.key == pygame.K_a:
-        moving_left = True
-      if event.key == pygame.K_d:
-        moving_right = True
-      if event.key == pygame.K_w:
-        moving_up = True
-      if event.key == pygame.K_s:
-        moving_down = True
-      if event.key == pygame.K_ESCAPE:
-        pause_game = True
+        run = False
 
-    #keyboard button released
-    if event.type == pygame.KEYUP:
-      if event.key == pygame.K_a:
-        moving_left = False
-      if event.key == pygame.K_d:
-        moving_right = False
-      if event.key == pygame.K_w:
-        moving_up = False
-      if event.key == pygame.K_s:
-        moving_down = False
+    if control_scheme == "WASD":
+        # take keyboard presses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                moving_left = True
+            if event.key == pygame.K_d:
+                moving_right = True
+            if event.key == pygame.K_w:
+                moving_up = True
+            if event.key == pygame.K_s:
+                moving_down = True
+            if event.key == pygame.K_ESCAPE:
+                pause_game = True
+
+        # keyboard button released
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_a:
+                moving_left = False
+            if event.key == pygame.K_d:
+                moving_right = False
+            if event.key == pygame.K_w:
+                moving_up = False
+            if event.key == pygame.K_s:
+                moving_down = False
+    
+    elif control_scheme == "ARROWS":
+        # take keyboard presses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                moving_left = True
+            if event.key == pygame.K_RIGHT:
+                moving_right = True
+            if event.key == pygame.K_UP:
+                moving_up = True
+            if event.key == pygame.K_DOWN:
+                moving_down = True
+            if event.key == pygame.K_ESCAPE:
+                pause_game = True
+
+        # keyboard button released
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                moving_left = False
+            if event.key == pygame.K_RIGHT:
+                moving_right = False
+            if event.key == pygame.K_UP:
+                moving_up = False
+            if event.key == pygame.K_DOWN:
+                moving_down = False
+                
 
   pygame.display.update()
 

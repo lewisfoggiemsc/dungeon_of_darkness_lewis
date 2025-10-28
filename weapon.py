@@ -73,10 +73,15 @@ class Arrow(pygame.sprite.Sprite):
     #check collision between arrow and enemies
     for enemy in enemy_list:
       if enemy.rect.colliderect(self.rect) and enemy.alive:
-        damage = 10 + random.randint(-5, 5)
+        temp_damage = 10 + random.randint(-5, 5)
         damage_pos = enemy.rect
-        enemy.health -= damage
+        enemy.health -= temp_damage
         enemy.hit = True
+        
+        if enemy.health <= 0:
+          damage = -999
+        else:
+          damage = temp_damage
         self.kill()
         break
 
