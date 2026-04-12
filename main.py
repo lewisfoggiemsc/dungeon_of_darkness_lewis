@@ -59,10 +59,23 @@ heal_fx.set_volume(0.5)
 restart_img = scale_img(pygame.image.load("assets/images/buttons/button_restart.png").convert_alpha(), constants.BUTTON_SCALE)
 exit_img = scale_img(pygame.image.load("assets/images/buttons/button_exit.png").convert_alpha(), constants.BUTTON_SCALE)
 resume_img = scale_img(pygame.image.load("assets/images/buttons/button_resume.png").convert_alpha(), constants.BUTTON_SCALE)
-start_img = scale_img(pygame.image.load("assets/images/buttons/button_start.png").convert_alpha(), constants.BUTTON_SCALE)
 settings_img = scale_img(pygame.image.load("assets/images/buttons/button_settings.png").convert_alpha(), constants.BUTTON_SCALE * 0.8)
 wasd_img = scale_img(pygame.image.load("assets/images/buttons/button_wasd.png").convert_alpha(), constants.BUTTON_SCALE*0.5)
 arrows_img = scale_img(pygame.image.load("assets/images/buttons/button_arrows.png").convert_alpha(), constants.BUTTON_SCALE*0.5)
+
+# create "Start Dungeon" button with proportional size
+button_font = pygame.font.Font("assets/fonts/AtariClassic.ttf", 40)
+start_text = "Start Dungeon"
+start_text_surface = button_font.render(start_text, True, constants.WHITE)
+text_width = start_text_surface.get_width()
+text_height = start_text_surface.get_height()
+button_padding_x = 30
+button_padding_y = 15
+start_img = pygame.Surface((text_width + button_padding_x * 2, text_height + button_padding_y * 2), pygame.SRCALPHA)
+start_img.fill((0, 0, 0, 0))
+pygame.draw.rect(start_img, (100, 100, 100), (0, 0, start_img.get_width(), start_img.get_height()), border_radius=10)
+pygame.draw.rect(start_img, (150, 150, 150), (2, 2, start_img.get_width() - 4, start_img.get_height() - 4), border_radius=8)
+start_img.blit(start_text_surface, (button_padding_x, button_padding_y))
 
 #load heart images
 heart_empty = scale_img(pygame.image.load("assets/images/items/heart_empty.png").convert_alpha(), constants.ITEM_SCALE)
@@ -237,7 +250,7 @@ intro_fade = ScreenFade(1, constants.BLACK,4)
 death_fade = ScreenFade(2, constants.PINK,4)
 
 # create buttons
-start_button = Button(constants.SCREEN_WIDTH // 2 - 145, constants.SCREEN_HEIGHT //2 -150, start_img)
+start_button = Button(constants.SCREEN_WIDTH // 2 - start_img.get_width() // 2, constants.SCREEN_HEIGHT //2 - start_img.get_height() // 2 - 100, start_img)
 exit_button = Button(constants.SCREEN_WIDTH // 2 - 110, constants.SCREEN_HEIGHT //2 + 50, exit_img)
 restart_button = Button(constants.SCREEN_WIDTH // 2 - 175, constants.SCREEN_HEIGHT //2 -50, restart_img)
 resume_button = Button(constants.SCREEN_WIDTH // 2 - 175, constants.SCREEN_HEIGHT //2 -150, resume_img)
