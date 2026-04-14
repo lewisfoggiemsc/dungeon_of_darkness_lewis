@@ -27,6 +27,7 @@ jobs:
       pull-requests: write       # Required to comment on PR
       actions: read              # Read access to actions
       security-events: write     # Write access for uploading security results (if needed)
+      issues: write
 
     steps:
       # Step 1: Checkout the code from the PR
