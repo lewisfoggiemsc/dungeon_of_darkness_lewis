@@ -4,7 +4,7 @@ name: Frontend Repository Security Scan
 # Triggers the workflow on pull requests targeting the "develop" branch
 on:
   pull_request:
-    branches: [develop]
+    branches: [main]
 
 # Ensures only one security scan runs per PR at a time; cancels in-progress scan if a new one starts
 concurrency:
