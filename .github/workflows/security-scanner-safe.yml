@@ -1,4 +1,4 @@
-name: Frontend Repository Security Scan
+name: PR Security Scan Safe
 
 on:
   pull_request:
