@@ -1,17 +1,96 @@
-name: PR Security Scan Safe
+name: PR Scan Safe
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
 
+concurrency:
+  group: security-scan-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  TRIVY_CACHE_DIR: /tmp/trivy-cache
+
 jobs:
-  test:
-    name: Simple Test Job
+  security_scan:
+    name: Full Trivy Repository Scan
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
 
-      - name: Echo message
-        run: echo "Workflow is working"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/go.mod', '**/go.sum', '**/package-lock.json', '**/yarn.lock') }}
+          restore-keys: |
+            trivy-db-${{ runner.os }}-
+
+      - name: Run Vulnerability/Secrets/Config Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy-results.json
+          severity: LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+          scanners: vuln,config,secret
+
+      - name: Run License Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy-license-results.json
+          scanners: license
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+
+      - name: Summarize Scan Results
+        run: |
+          echo "# Complete Repository Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f trivy-results.json ]; then
+            TOTAL=$(jq '[.Results[] | (.Vulnerabilities // []) + (.Misconfigurations // []) + (.Secrets // [])] | length' trivy-results.json || echo 0)
+            CRIT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-results.json || echo 0)
+            HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy-results.json || echo 0)
+            MED=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' trivy-results.json || echo 0)
+            LOW=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="LOW")] | length' trivy-results.json || echo 0)
+            MIS=$(jq '[.Results[]?.Misconfigurations[]?] | length' trivy-results.json || echo 0)
+            SECRETS=$(jq '[.Results[]?.Secrets[]?] | length' trivy-results.json || echo 0)
+
+            echo "| Type | Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Vulnerabilities | Critical | $CRIT |" >> $GITHUB_STEP_SUMMARY
+            echo "| Vulnerabilities | High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Vulnerabilities | Medium | $MED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Vulnerabilities | Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| Misconfigurations | - | $MIS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Secrets | - | $SECRETS |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total Issues** | - | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            echo "- **Scan Time:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch:** ${{ github.head_ref }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$TOTAL" -eq 0 ]; then
+              echo "**No issues found. Repository is secure.**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**$TOTAL issues found. Please review the results above.**" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Scan failed: trivy-results.json not found**" >> $GITHUB_STEP_SUMMARY
+          fi
