@@ -1,0 +1,57 @@
+name: SecureFlag Assignments Check
+
+on:
+  pull_request:
+    # Triggers when a PR is first opened or updated
+    types: [opened, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post SecureFlag Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `### ❌ Merge Request Blocked
+            
+            **User:** \`${context.payload.pull_request.user.login}\`
+            
+            To proceed, you must have **completed pending assignments**. You haven't completed your **Injections Learning Path**.
+            
+            Please visit [SecureFlag](https://www.secureflag.com/user/index.html#/exercises/assigned) to view and complete your assignments.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            })
+
+      - name: Block the PR
+        # This step forces the "Check" to fail so the PR cannot be merged 
+        # until a human manually overrides it or you add logic to verify completion.
+        run: |
+          echo "Assignments not completed. Blocking merge."
+          exit 1
+#on:
+#  push:
+#    branches:
+#      - '*'
+#      - '!main'
+
+#jobs:
+#  assignments-check:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: secureflag/actions/.github/actions/assignments_check@main
+#        with:
+#          target_repo: ${{ github.repository }}
+#          gh_token: ${{ secrets.SEC_TOKEN }}
+#          api_endpoint: ${{ secrets.API_ENDPOINT }}
+#          api_token: ${{ secrets.API_TOKEN }}
+#          assignment_check_type: 'completed_pending'
