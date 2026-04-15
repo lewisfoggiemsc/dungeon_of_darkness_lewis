@@ -62,8 +62,9 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
         run: |
-          echo "# Complete Repository Security Scan Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          # Initialize the summary file
+          echo "### 🛡️ Security Scan Results" > pr_summary.md
+          echo "" >> pr_summary.md
 
           if [ -f trivy-results.json ]; then
             TOTAL=$(jq '[.Results[] | ((.Vulnerabilities // []) + (.Misconfigurations // []) + (.Secrets // []))] | flatten | length' trivy-results.json || echo 0)
@@ -74,26 +75,42 @@ jobs:
             MIS=$(jq '[.Results[]?.Misconfigurations[]?] | length' trivy-results.json || echo 0)
             SECRETS=$(jq '[.Results[]?.Secrets[]?] | length' trivy-results.json || echo 0)
 
-            echo "| Type | Severity | Count |" >> "$GITHUB_STEP_SUMMARY"
-            echo "|------|----------|-------|" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Vulnerabilities | Critical | $CRIT |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Vulnerabilities | High | $HIGH |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Vulnerabilities | Medium | $MED |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Vulnerabilities | Low | $LOW |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Misconfigurations | - | $MIS |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Secrets | - | $SECRETS |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| **Total Issues** | - | **$TOTAL** |" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Type | Severity | Count |" >> pr_summary.md
+            echo "|------|----------|-------|" >> pr_summary.md
+            echo "| Vulnerabilities | Critical | $CRIT |" >> pr_summary.md
+            echo "| Vulnerabilities | High | $HIGH |" >> pr_summary.md
+            echo "| Vulnerabilities | Medium | $MED |" >> pr_summary.md
+            echo "| Vulnerabilities | Low | $LOW |" >> pr_summary.md
+            echo "| Misconfigurations | - | $MIS |" >> pr_summary.md
+            echo "| Secrets | - | $SECRETS |" >> pr_summary.md
+            echo "| **Total Issues** | - | **$TOTAL** |" >> pr_summary.md
+            echo "" >> pr_summary.md
 
-            echo "- **Scan Time:** $(date -u)" >> "$GITHUB_STEP_SUMMARY"
-            echo "- **Branch:** ${HEAD_REF}" >> "$GITHUB_STEP_SUMMARY"
-            echo "- **Repository:** ${REPO}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Scan Time:** $(date -u)" >> pr_summary.md
+            echo "- **Branch:** ${HEAD_REF}" >> pr_summary.md
+            echo "- **Repository:** ${REPO}" >> pr_summary.md
+            echo "" >> pr_summary.md
 
             if [ "$TOTAL" -eq 0 ]; then
-              echo "**No issues found. Repository is secure.**" >> "$GITHUB_STEP_SUMMARY"
+              echo "**✅ No issues found. Repository is secure.**" >> pr_summary.md
             else
-              echo "**$TOTAL issues found. Please review the results above.**" >> "$GITHUB_STEP_SUMMARY"
+              echo "**⚠️ $TOTAL issues found. Please review the results.**" >> pr_summary.md
             fi
           else
-            echo "**Scan failed: trivy-results.json not found**" >> "$GITHUB_STEP_SUMMARY"
+            echo "❌ **Scan failed: trivy-results.json not found**" >> pr_summary.md
           fi
+
+          # Output to Step Summary for immediate visibility in Actions tab
+          cat pr_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save PR info
+        run: echo ${{ github.event.pull_request.number }} > pr_number.txt
+
+      - name: Upload Scan Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-scan-results
+          path: |
+            pr_summary.md
+            pr_number.txt
+          retention-days: 1
