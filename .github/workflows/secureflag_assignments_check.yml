@@ -1,7 +1,7 @@
 name: SecureFlag Assignments Check
 
 on:
-  pull_request:
+  pull_request_target:
     # Triggers when a PR is first opened or updated
     types: [opened, reopened, synchronize]
 
