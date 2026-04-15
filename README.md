@@ -17,3 +17,8 @@ source .venv/bin/activate
 python3 main.py
 ```
 
+## Run semgrep
+```bash
+semgrep ci
+```
+
