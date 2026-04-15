@@ -1,7 +1,7 @@
 name: PR Security Scan Safe
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
 
 concurrency:
@@ -101,7 +101,7 @@ jobs:
       # Save PR number so the comment workflow knows which PR to target
       # (workflow_run does not have direct PR context)
       - name: Save PR number
-        run: echo "${{ github.event.pull_request.number }}" > pr_number.txt
+        run: echo "${{ github.event.pull_request_target.number }}" > pr_number.txt
 
       # Upload scan results + PR number as artifact for the comment workflow to consume
       - name: Upload scan results artifact
