@@ -1,11 +1,12 @@
 name: PR Scan Safe
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened]
 
 concurrency:
-  group: security-scan-${{ github.head_ref }}
+  group: security-scan-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 env:
@@ -18,13 +19,12 @@ jobs:
 
     permissions:
       contents: read
-      actions: read
-      security-events: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout PR code
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Cache Trivy DB
@@ -58,12 +58,15 @@ jobs:
           cache-dir: ${{ env.TRIVY_CACHE_DIR }}
 
       - name: Summarize Scan Results
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
         run: |
-          echo "# Complete Repository Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Complete Repository Security Scan Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f trivy-results.json ]; then
-            TOTAL=$(jq '[.Results[] | (.Vulnerabilities // []) + (.Misconfigurations // []) + (.Secrets // [])] | length' trivy-results.json || echo 0)
+            TOTAL=$(jq '[.Results[] | ((.Vulnerabilities // []) + (.Misconfigurations // []) + (.Secrets // []))] | flatten | length' trivy-results.json || echo 0)
             CRIT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' trivy-results.json || echo 0)
             HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' trivy-results.json || echo 0)
             MED=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' trivy-results.json || echo 0)
@@ -71,26 +74,26 @@ jobs:
             MIS=$(jq '[.Results[]?.Misconfigurations[]?] | length' trivy-results.json || echo 0)
             SECRETS=$(jq '[.Results[]?.Secrets[]?] | length' trivy-results.json || echo 0)
 
-            echo "| Type | Severity | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Vulnerabilities | Critical | $CRIT |" >> $GITHUB_STEP_SUMMARY
-            echo "| Vulnerabilities | High | $HIGH |" >> $GITHUB_STEP_SUMMARY
-            echo "| Vulnerabilities | Medium | $MED |" >> $GITHUB_STEP_SUMMARY
-            echo "| Vulnerabilities | Low | $LOW |" >> $GITHUB_STEP_SUMMARY
-            echo "| Misconfigurations | - | $MIS |" >> $GITHUB_STEP_SUMMARY
-            echo "| Secrets | - | $SECRETS |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Total Issues** | - | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Type | Severity | Count |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|------|----------|-------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Vulnerabilities | Critical | $CRIT |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Vulnerabilities | High | $HIGH |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Vulnerabilities | Medium | $MED |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Vulnerabilities | Low | $LOW |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Misconfigurations | - | $MIS |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Secrets | - | $SECRETS |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| **Total Issues** | - | **$TOTAL** |" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
 
-            echo "- **Scan Time:** $(date -u)" >> $GITHUB_STEP_SUMMARY
-            echo "- **Branch:** ${{ github.head_ref }}" >> $GITHUB_STEP_SUMMARY
-            echo "- **Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Scan Time:** $(date -u)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Branch:** ${HEAD_REF}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Repository:** ${REPO}" >> "$GITHUB_STEP_SUMMARY"
 
             if [ "$TOTAL" -eq 0 ]; then
-              echo "**No issues found. Repository is secure.**" >> $GITHUB_STEP_SUMMARY
+              echo "**No issues found. Repository is secure.**" >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "**$TOTAL issues found. Please review the results above.**" >> $GITHUB_STEP_SUMMARY
+              echo "**$TOTAL issues found. Please review the results above.**" >> "$GITHUB_STEP_SUMMARY"
             fi
           else
-            echo "**Scan failed: trivy-results.json not found**" >> $GITHUB_STEP_SUMMARY
+            echo "**Scan failed: trivy-results.json not found**" >> "$GITHUB_STEP_SUMMARY"
           fi
