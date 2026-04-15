@@ -1,4 +1,4 @@
-name: Post Security Scan Comment
+name: Post Security Scan Comment Safe
 
 # Triggers AFTER the scanner workflow completes — runs in base repo context (trusted)
 # Critically: this workflow never checks out or executes code from the fork
