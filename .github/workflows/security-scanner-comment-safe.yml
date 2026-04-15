@@ -27,6 +27,7 @@ jobs:
       - name: Post PR Comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # Read the PR number saved in the artifact
           PR_NUMBER=$(cat pr_number.txt)
@@ -34,7 +35,7 @@ jobs:
           # Check if the summary file exists
           if [ -f pr_summary.md ]; then
             # Post the content of pr_summary.md as a comment
-            gh pr comment $PR_NUMBER --body-file pr_summary.md
+            gh pr comment "$PR_NUMBER" --body-file pr_summary.md
           else
             echo "Summary file not found, skipping comment."
             exit 1
