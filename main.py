@@ -1,4 +1,4 @@
-import pygame
+adimport pygame
 from pygame import mixer
 import csv
 import constants
