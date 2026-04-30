@@ -13,19 +13,21 @@ source .venv/bin/activate
 ```
 
 ### New Branch
+```bash
 git checkout -b new_feature_
+```
 
 ### add
+```bash
 git add main.py
 git commit -m 
 git push origin new_feature_
+```
 
 ### Run game
 ```bash
 python3 main.py
 ```
-
-
 
 ## Run semgrep
 ```bash
