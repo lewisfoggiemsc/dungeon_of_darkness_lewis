@@ -12,10 +12,20 @@ uv sync
 source .venv/bin/activate
 ```
 
+### New Branch
+git checkout -b new_feature_
+
+### add
+git add main.py
+git commit -m 
+git push origin new_feature_
+
 ### Run game
 ```bash
 python3 main.py
 ```
+
+
 
 ## Run semgrep
 ```bash
