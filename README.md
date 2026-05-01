@@ -34,3 +34,7 @@ python3 main.py
 semgrep ci
 ```
 
+## Prompt
+```bash
+Change the title of the "Start" button to "Start Dungeon" and change the size of the button according to the extra text proportions. Do not install any new modules or run any commands.
+```
