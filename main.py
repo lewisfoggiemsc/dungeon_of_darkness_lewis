@@ -294,7 +294,9 @@ while run:
             # do something when Escape is pressed
             show_settings = False
     else:
-      if start_button.draw(screen):
+      start_button.draw(screen)
+      draw_text("Start Dungeon", font, constants.WHITE, constants.SCREEN_WIDTH // 2 - 60, constants.SCREEN_HEIGHT // 2 - 140)
+      if start_button.rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
         start_game = True
         start_intro = True
       if settings_button.draw(screen):
